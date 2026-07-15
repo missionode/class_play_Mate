@@ -236,7 +236,15 @@ function processLoadedCSV(rows) {
   const newEmployees = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (row.length < 2 || !row[mapIdx.name]) continue;
+    if (row.length < 2) continue;
+
+    // Extract gathering spot if present in sheet row (even if name/gender/dept are blank)
+    if (spotIdx !== -1 && row[spotIdx]) {
+      const spot = row[spotIdx].trim();
+      if (spot) parsedSpots.add(spot);
+    }
+
+    if (!row[mapIdx.name]) continue;
 
     const name = row[mapIdx.name].trim();
     let gender = (row[mapIdx.gender] || '').trim().toLowerCase();
@@ -247,12 +255,6 @@ function processLoadedCSV(rows) {
     else gender = 'Other';
 
     const dept = (row[mapIdx.dept] || 'General').trim();
-
-    // Extract gathering spot if present in sheet row
-    if (spotIdx !== -1 && row[spotIdx]) {
-      const spot = row[spotIdx].trim();
-      if (spot) parsedSpots.add(spot);
-    }
 
     newEmployees.push({
       id: generateUUID(),
@@ -314,7 +316,7 @@ async function loadFromGoogleSheet() {
 async function loadSampleData() {
   showLoader(true);
   try {
-    const response = await fetch('./employees_sample.csv');
+    const response = await fetch('./employees_sample.csv?t=' + Date.now());
     if (!response.ok) throw new Error("Could not load local sample data.");
     const text = await response.text();
     const parsed = parseCSV(text);
