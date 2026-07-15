@@ -44,6 +44,18 @@ let employees = [];
 let groups = [];
 let currentTheme = 'light';
 
+const FUNNY_EXCUSES = [
+  "Excuse of the day: 'My emotional support code just crashed, I must comfort it.' 🥺",
+  "Excuse of the day: 'Sorry, I'm currently sharing a single critical braincell with my compiler.' 🧠",
+  "Excuse of the day: 'My social battery is at 2% and charging is currently suspended by IT.' 🔋",
+  "Excuse of the day: 'I'm in a committed relationship with this bug. We need space.' 🐛",
+  "Excuse of the day: 'Calendar invite said \"Deep Staring at Spreadsheet\" and I respect my blocks.' 📊",
+  "Excuse of the day: 'I'm experiencing an unplanned introversion update. Estimated time remaining: 2 hours.' ⏳",
+  "Excuse of the day: 'My plants need me to explain this architecture diagram to them.' 🌿",
+  "Excuse of the day: 'Busy gaslighting myself into thinking this compile will succeed on the first try.' 🕯️",
+  "Excuse of the day: 'Sorry, I've hit my social quota for the fiscal quarter.' 📈"
+];
+
 // DOM Elements
 const themeToggle = document.getElementById('theme-toggle');
 const tabBoard = document.getElementById('tab-board');
@@ -76,6 +88,7 @@ const loadingOverlay = document.getElementById('loading-overlay');
 window.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   loadSettingsFromLocalStorage();
+  updateFunnyExcuse();
   if (employees.length === 0) {
     loadSampleData(); // Load sample data if none stored
   }
@@ -571,6 +584,7 @@ function mixAndGenerateTeams() {
 
   groups = localGroups;
   renderGroupsGrid();
+  updateFunnyExcuse();
   saveSettingsToLocalStorage();
 }
 
@@ -847,5 +861,13 @@ function loadSettingsFromLocalStorage() {
     }
   } catch (e) {
     console.error("Failed to load state from localStorage:", e);
+  }
+}
+
+function updateFunnyExcuse() {
+  const excuseTip = document.getElementById('excuse-tip');
+  if (excuseTip) {
+    const randomExcuse = FUNNY_EXCUSES[Math.floor(Math.random() * FUNNY_EXCUSES.length)];
+    excuseTip.textContent = randomExcuse;
   }
 }
