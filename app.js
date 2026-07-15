@@ -40,16 +40,10 @@ const COOL_TEAM_NAMES = [
 ];
 
 const GATHERING_POINTS = [
-  "Cafeteria Area A ☕",
-  "Main Pantry (1st Floor) 🏢",
-  "Terrace Garden Lounge 🌿",
-  "Coffee Bar (Ground Floor) ☕",
-  "North Wing Coffee Station ☕",
-  "South Lounge Area 🛋️",
-  "Skyline Cafeteria ☁️",
-  "Corner Booth Diner 🍽️",
-  "Juice Bar Oasis 🍹",
-  "Central Atrium Courtyard 🌳"
+  "Suda Suda ☕",
+  "Ponnus Cafe 🍽️",
+  "Rasoi 🍛",
+  "Tea leaf 🍃"
 ];
 
 // Application State
