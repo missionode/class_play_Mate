@@ -736,3 +736,57 @@ tr:hover td {
   border-color: transparent !important;
   box-shadow: none !important;
 }
+
+/* Brand Title & Slanted Spilling Cup Styling */
+.brand-title {
+  font-size: 2.6rem;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-heading);
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.brand-title .light-trans {
+  opacity: 0.95; /* 5% transparent */
+}
+
+.slant-cup-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  margin: 0 0.1rem;
+}
+
+.slant-cup {
+  width: 2.2rem;
+  height: 2.2rem;
+  fill: var(--accent);
+  transform: rotate(18deg);
+  transition: var(--transition);
+}
+
+.spill-drop {
+  position: absolute;
+  font-size: 0.8rem;
+  top: 6px;
+  right: -8px;
+  transform: rotate(-10deg);
+  animation: spill-drip 2s infinite ease-in-out;
+  opacity: 0.8;
+}
+
+@keyframes spill-drip {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(-10deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(2px, 4px) scale(0.9) rotate(-15deg);
+    opacity: 0.4;
+  }
+}
