@@ -1,18 +1,16 @@
 // Cafeteria Mixer Application Logic
 
-// Icons SVGs Definitions (Chai, Coffee, Shake, Juice)
+// Icons SVGs Definitions (Chai, Coffee, Juice)
 const BREAK_ICONS = {
   chai: `<svg viewBox="0 0 24 24"><path d="M2,21H20V19H2V21M20,8H18V5H20V8M20,3H4v10A4,4 0 0,0 8,17H14A4,4 0 0,0 18,13v-1h2A2,2 0 0,0 22,10V5A2,2 0 0,0 20,3M16,13A2,2 0 0,1 14,15H8A2,2 0 0,1 6,13V5H16V13Z" /></svg>`,
   coffee: `<svg viewBox="0 0 24 24"><path d="M2,21H20V19H2V21M20,8H18V5H20V8M20,3H4v10A4,4 0 0,0 8,17H14A4,4 0 0,0 18,13v-1h2A2,2 0 0,0 22,10V5A2,2 0 0,0 20,3M16,13A2,2 0 0,1 14,15H8A2,2 0 0,1 6,13V5H16V13Z" /></svg>`, // Fallback or coffee cup
-  shake: `<svg viewBox="0 0 24 24"><path d="M12,2A1,1 0 0,0 11,3V6.26C8.19,6.72 6,9.15 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12C18,9.15 15.81,6.72 13,6.26V3A1,1 0 0,0 12,2M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,20A2,2 0 0,0 10,22H14A2,2 0 0,0 12,20Z" /></svg>`,
   juice: `<svg viewBox="0 0 24 24"><path d="M7.5,2H16.5L19,8H5L7.5,2M6.4,10H17.6L19,20H5L6.4,10M12,11A2,2 0 0,0 10,13A2,2 0 0,0 12,15A2,2 0 0,0 14,13A2,2 0 0,0 12,11Z" /></svg>`
 };
 
-const ICON_KEYS = ['chai', 'coffee', 'shake', 'juice'];
+const ICON_KEYS = ['chai', 'coffee', 'juice'];
 const ICON_LABELS = {
   chai: 'Chai Break ☕',
   coffee: 'Coffee Break ☕',
-  shake: 'Shake Break 🥤',
   juice: 'Juice Break 🍹'
 };
 
@@ -419,14 +417,29 @@ function mixAndGenerateTeams() {
     members: []
   }));
 
-  // Initial distribution: distribute employees randomly to balanced-size groups
+  // Initial distribution: distribute employees randomly but unevenly
   const shuffledEmployees = [...employees].sort(() => Math.random() - 0.5);
-  shuffledEmployees.forEach((emp, index) => {
-    const groupIdx = index % numGroups;
-    localGroups[groupIdx].members.push(emp);
+  
+  // 1. Give each group its minSize members first
+  let empIdx = 0;
+  localGroups.forEach(grp => {
+    for (let s = 0; s < minSize; s++) {
+      if (empIdx < shuffledEmployees.length) {
+        grp.members.push(shuffledEmployees[empIdx++]);
+      }
+    }
   });
 
-  // Optimization: simulated annealing/iterative swap optimizer
+  // 2. Distribute the rest randomly to groups that are below maxSize
+  while (empIdx < shuffledEmployees.length) {
+    const eligibleGroups = localGroups.filter(g => g.members.length < maxSize);
+    if (eligibleGroups.length === 0) break;
+
+    const randomGrp = eligibleGroups[Math.floor(Math.random() * eligibleGroups.length)];
+    randomGrp.members.push(shuffledEmployees[empIdx++]);
+  }
+
+  // Optimization: simulated annealing/iterative swap/move optimizer
   // Penalty Scoring:
   // Penalty for same department: 15 per same-department pair inside a group
   // Penalty for single gender: 20 per group containing >1 person with only 1 gender (if mixed is possible)
@@ -481,25 +494,47 @@ function mixAndGenerateTeams() {
     const g1 = localGroups[g1Idx];
     const g2 = localGroups[g2Idx];
 
-    if (g1.members.length === 0 || g2.members.length === 0) continue;
+    // 40% chance to move a member, 60% chance to swap
+    const isMove = Math.random() < 0.4;
 
-    // Pick a random employee from each group
-    const m1Idx = Math.floor(Math.random() * g1.members.length);
-    const m2Idx = Math.floor(Math.random() * g2.members.length);
-
-    // Swap members temporarily
-    const temp = g1.members[m1Idx];
-    g1.members[m1Idx] = g2.members[m2Idx];
-    g2.members[m2Idx] = temp;
-
-    const newScore = getPenaltyScore(localGroups);
-    if (newScore < currentScore || (newScore === currentScore && Math.random() < 0.1)) {
-      currentScore = newScore;
+    if (isMove) {
+      if (g1.members.length === 0) continue;
+      
+      const mIdx = Math.floor(Math.random() * g1.members.length);
+      const member = g1.members[mIdx];
+      
+      g1.members.splice(mIdx, 1);
+      g2.members.push(member);
+      
+      const newScore = getPenaltyScore(localGroups);
+      if (newScore < currentScore || (newScore === currentScore && Math.random() < 0.1)) {
+        currentScore = newScore;
+      } else {
+        // Revert move
+        g2.members.pop();
+        g1.members.push(member);
+      }
     } else {
-      // Revert swap
-      const revertTemp = g1.members[m1Idx];
+      if (g1.members.length === 0 || g2.members.length === 0) continue;
+      
+      // Pick a random employee from each group
+      const m1Idx = Math.floor(Math.random() * g1.members.length);
+      const m2Idx = Math.floor(Math.random() * g2.members.length);
+
+      // Swap members temporarily
+      const temp = g1.members[m1Idx];
       g1.members[m1Idx] = g2.members[m2Idx];
-      g2.members[m2Idx] = revertTemp;
+      g2.members[m2Idx] = temp;
+
+      const newScore = getPenaltyScore(localGroups);
+      if (newScore < currentScore || (newScore === currentScore && Math.random() < 0.1)) {
+        currentScore = newScore;
+      } else {
+        // Revert swap
+        const revertTemp = g1.members[m1Idx];
+        g1.members[m1Idx] = g2.members[m2Idx];
+        g2.members[m2Idx] = revertTemp;
+      }
     }
   }
 
@@ -541,7 +576,6 @@ function renderGroupsGrid() {
             <span class="member-gender-dot ${genderClass}"></span>
             <span class="member-name">${escapeHTML(m.name)}</span>
           </div>
-          <span class="member-dept">${escapeHTML(m.department)}</span>
         </div>
       `;
     }).join('');
