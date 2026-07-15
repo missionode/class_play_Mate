@@ -52,7 +52,10 @@ const loadingOverlay = document.getElementById('loading-overlay');
 // Initialize App
 window.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-  loadSampleData(); // Load sample data initially
+  loadSettingsFromLocalStorage();
+  if (employees.length === 0) {
+    loadSampleData(); // Load sample data if none stored
+  }
 });
 
 // Event Listeners setup
@@ -61,6 +64,7 @@ function setupEventListeners() {
   themeToggle.addEventListener('click', () => {
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', currentTheme);
+    saveSettingsToLocalStorage();
   });
 
   // Navigation Tabs
@@ -76,6 +80,11 @@ function setupEventListeners() {
   loadSampleBtn.addEventListener('click', loadSampleData);
   clearDataBtn.addEventListener('click', clearAllEmployees);
   addEmployeeBtn.addEventListener('click', createNewEmployeeRow);
+
+  // Settings inputs
+  minGroupSizeInput.addEventListener('change', saveSettingsToLocalStorage);
+  maxGroupSizeInput.addEventListener('change', saveSettingsToLocalStorage);
+  sheetUrlInput.addEventListener('input', saveSettingsToLocalStorage);
 
   // Grouping Engine Action
   generateBtn.addEventListener('click', () => {
@@ -192,6 +201,7 @@ function processLoadedCSV(rows) {
       </div>
     `;
     groupStatPill.textContent = "0 Groups Generated";
+    saveSettingsToLocalStorage();
   }
 }
 
@@ -237,6 +247,7 @@ async function loadSampleData() {
 // Clear employee lists
 function clearAllEmployees() {
   employees = [];
+  groups = [];
   renderEmployeeTable();
   updateEmployeeCountBadge();
   groupsGrid.innerHTML = `
@@ -246,6 +257,7 @@ function clearAllEmployees() {
     </div>
   `;
   groupStatPill.textContent = "0 Groups Generated";
+  saveSettingsToLocalStorage();
 }
 
 // UUID helper
@@ -291,6 +303,7 @@ function renderEmployeeTable() {
       const targetEmp = employees.find(e => e.id === emp.id);
       if (targetEmp) {
         targetEmp[field] = val;
+        saveSettingsToLocalStorage();
       }
     };
 
@@ -298,13 +311,17 @@ function renderEmployeeTable() {
     deptCell.addEventListener('blur', () => updateValue('department', deptCell));
     genderSelect.addEventListener('change', () => {
       const targetEmp = employees.find(e => e.id === emp.id);
-      if (targetEmp) targetEmp.gender = genderSelect.value;
+      if (targetEmp) {
+        targetEmp.gender = genderSelect.value;
+        saveSettingsToLocalStorage();
+      }
     });
 
     deleteBtn.addEventListener('click', () => {
       employees = employees.filter(e => e.id !== emp.id);
       tr.remove();
       updateEmployeeCountBadge();
+      saveSettingsToLocalStorage();
     });
 
     employeeTableBody.appendChild(tr);
@@ -322,6 +339,7 @@ function createNewEmployeeRow() {
   employees.push(newEmp);
   renderEmployeeTable();
   updateEmployeeCountBadge();
+  saveSettingsToLocalStorage();
   
   // Highlight and focus name of the newly added employee
   setTimeout(() => {
@@ -480,6 +498,7 @@ function mixAndGenerateTeams() {
 
   groups = localGroups;
   renderGroupsGrid();
+  saveSettingsToLocalStorage();
 }
 
 // Render generated Groups Grid on the visual board
@@ -548,6 +567,7 @@ function renderGroupsGrid() {
       // Update DOM directly
       iconBtn.innerHTML = BREAK_ICONS[g.iconKey];
       subtitleSpan.textContent = `${ICON_LABELS[g.iconKey]} (${g.members.length} members)`;
+      saveSettingsToLocalStorage();
     });
 
     groupsGrid.appendChild(card);
@@ -565,6 +585,12 @@ function handleBackgroundUpload(e) {
     presentationCanvas.style.backgroundImage = `url('${dataUrl}')`;
     presentationCanvas.classList.add('has-bg');
     clearBgBtn.style.display = 'inline-flex';
+    
+    try {
+      localStorage.setItem('mixer_bg', dataUrl);
+    } catch (err) {
+      console.warn("Background image too large to save to localStorage settings.");
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -574,6 +600,7 @@ function removeBackgroundImage() {
   presentationCanvas.classList.remove('has-bg');
   clearBgBtn.style.display = 'none';
   bgFileInput.value = '';
+  localStorage.removeItem('mixer_bg');
 }
 
 // Export presentation view to image format
@@ -638,4 +665,59 @@ function escapeHTML(str) {
       '"': '&quot;'
     }[tag] || tag)
   );
+}
+
+// LocalStorage Persistence Hooks
+function saveSettingsToLocalStorage() {
+  try {
+    localStorage.setItem('mixer_sheet_url', sheetUrlInput.value.trim());
+    localStorage.setItem('mixer_min_group_size', minGroupSizeInput.value);
+    localStorage.setItem('mixer_max_group_size', maxGroupSizeInput.value);
+    localStorage.setItem('mixer_theme', currentTheme);
+    localStorage.setItem('mixer_employees', JSON.stringify(employees));
+    localStorage.setItem('mixer_groups', JSON.stringify(groups));
+  } catch (e) {
+    console.error("Failed to save state to localStorage:", e);
+  }
+}
+
+function loadSettingsFromLocalStorage() {
+  try {
+    const savedTheme = localStorage.getItem('mixer_theme');
+    if (savedTheme) {
+      currentTheme = savedTheme;
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    }
+
+    const savedUrl = localStorage.getItem('mixer_sheet_url');
+    if (savedUrl !== null) sheetUrlInput.value = savedUrl;
+
+    const savedMin = localStorage.getItem('mixer_min_group_size');
+    if (savedMin !== null) minGroupSizeInput.value = savedMin;
+
+    const savedMax = localStorage.getItem('mixer_max_group_size');
+    if (savedMax !== null) maxGroupSizeInput.value = savedMax;
+
+    const savedEmps = localStorage.getItem('mixer_employees');
+    if (savedEmps) {
+      employees = JSON.parse(savedEmps);
+      renderEmployeeTable();
+      updateEmployeeCountBadge();
+    }
+
+    const savedGroups = localStorage.getItem('mixer_groups');
+    if (savedGroups) {
+      groups = JSON.parse(savedGroups);
+      renderGroupsGrid();
+    }
+
+    const savedBg = localStorage.getItem('mixer_bg');
+    if (savedBg) {
+      presentationCanvas.style.backgroundImage = `url('${savedBg}')`;
+      presentationCanvas.classList.add('has-bg');
+      clearBgBtn.style.display = 'inline-flex';
+    }
+  } catch (e) {
+    console.error("Failed to load state from localStorage:", e);
+  }
 }
