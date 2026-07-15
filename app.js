@@ -39,7 +39,7 @@ const COOL_TEAM_NAMES = [
   "High Key Hydrated 💦"
 ];
 
-const GATHERING_POINTS = [
+let GATHERING_POINTS = [
   "Suda Suda ☕",
   "Ponnus Cafe 🍽️",
   "Rasoi 🍛",
@@ -204,11 +204,18 @@ function processLoadedCSV(rows) {
     return;
   }
   
-  // Try to find headers: Name, Gender, Department
+  // Try to find headers: Name, Gender, Department, and Gathering/Meeting/Grouping points
   const header = rows[0].map(h => h.trim().toLowerCase());
   const nameIdx = header.findIndex(h => h.includes('name'));
   const genderIdx = header.findIndex(h => h.includes('gender') || h.includes('sex'));
   const deptIdx = header.findIndex(h => h.includes('department') || h.includes('team') || h.includes('dept'));
+  const spotIdx = header.findIndex(h => 
+    h.includes('gathering') || 
+    h.includes('meeting') || 
+    h.includes('location') || 
+    h.includes('spot') || 
+    h.includes('grouping')
+  );
   
   // If headers not matching perfectly, use columns 0, 1, 2 as fallback
   const mapIdx = {
@@ -217,6 +224,7 @@ function processLoadedCSV(rows) {
     dept: deptIdx !== -1 ? deptIdx : 2
   };
 
+  const parsedSpots = new Set();
   const newEmployees = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -232,12 +240,22 @@ function processLoadedCSV(rows) {
 
     const dept = (row[mapIdx.dept] || 'General').trim();
 
+    // Extract gathering spot if present in sheet row
+    if (spotIdx !== -1 && row[spotIdx]) {
+      const spot = row[spotIdx].trim();
+      if (spot) parsedSpots.add(spot);
+    }
+
     newEmployees.push({
       id: generateUUID(),
       name,
       gender,
       department: dept
     });
+  }
+
+  if (parsedSpots.size > 0) {
+    GATHERING_POINTS = Array.from(parsedSpots);
   }
 
   if (newEmployees.length > 0) {
@@ -912,6 +930,7 @@ function saveSettingsToLocalStorage() {
     localStorage.setItem('mixer_theme', currentTheme);
     localStorage.setItem('mixer_employees', JSON.stringify(employees));
     localStorage.setItem('mixer_groups', JSON.stringify(groups));
+    localStorage.setItem('mixer_gathering_points', JSON.stringify(GATHERING_POINTS));
   } catch (e) {
     console.error("Failed to save state to localStorage:", e);
   }
@@ -945,6 +964,11 @@ function loadSettingsFromLocalStorage() {
     if (savedGroups) {
       groups = JSON.parse(savedGroups);
       renderGroupsGrid();
+    }
+
+    const savedPoints = localStorage.getItem('mixer_gathering_points');
+    if (savedPoints) {
+      GATHERING_POINTS = JSON.parse(savedPoints);
     }
 
     const savedBg = localStorage.getItem('mixer_bg');
