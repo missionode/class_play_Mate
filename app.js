@@ -214,7 +214,15 @@ function processLoadedCSV(rows) {
     h.includes('meeting') || 
     h.includes('location') || 
     h.includes('spot') || 
-    h.includes('grouping')
+    h.includes('grouping') ||
+    h.includes('venue') ||
+    h.includes('pantry') ||
+    h.includes('place') ||
+    h.includes('cafe') ||
+    h.includes('destination') ||
+    h.includes('point') ||
+    h.includes('room') ||
+    h.includes('area')
   );
   
   // If headers not matching perfectly, use columns 0, 1, 2 as fallback
@@ -262,10 +270,16 @@ function processLoadedCSV(rows) {
     employees = newEmployees;
     renderEmployeeTable();
     updateEmployeeCountBadge();
+    
+    const spotInfo = parsedSpots.size > 0 
+      ? `<br><span style="font-size: 0.9rem; color: var(--accent); font-weight: 600;">📍 Loaded ${parsedSpots.size} meeting spots: ${Array.from(parsedSpots).join(', ')}</span>`
+      : `<br><span style="font-size: 0.85rem; color: var(--text-muted);">No custom meeting spots found in sheet. Using defaults.</span>`;
+
     groupsGrid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
         <p style="font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 600;">Data Loaded (${employees.length} Employees)</p>
         <p>Set settings and click <strong>"Mix Employees"</strong> to build tea break groups.</p>
+        ${spotInfo}
       </div>
     `;
     groupStatPill.textContent = "0 Groups Generated";
