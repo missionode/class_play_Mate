@@ -14,6 +14,31 @@ const ICON_LABELS = {
   juice: 'Juice Break 🍹'
 };
 
+const COOL_TEAM_NAMES = [
+  "Chai Yapping Session ☕",
+  "Espresso Depresso ☕",
+  "The Tea Spill 🍵",
+  "Main Character Mugs 💅",
+  "Vibe Check Cafe ✨",
+  "Caffeine & Chaos ⚡",
+  "No Cap Cappuccino ☕",
+  "Brainrot Break 🧠",
+  "Corporate Yappers 🗣️",
+  "Era of Espresso 🕰️",
+  "Sipping & Judging 👀",
+  "Emotional Support Chai ☕",
+  "Boba & Besties 🧋",
+  "Plot Armor Coffee 🛡️",
+  "Rial Tea 💅",
+  "Chai-ing Our Best 🥺",
+  "Quiet Quitting Cafe 🤫",
+  "Delulu Juice 🍹",
+  "Aura Boosters 📈",
+  "Certified Brews 📜",
+  "CEO of Tea Breaks 👑",
+  "High Key Hydrated 💦"
+];
+
 // Application State
 let employees = [];
 let groups = [];
@@ -409,13 +434,19 @@ function mixAndGenerateTeams() {
 
   const numGroups = bestG;
   
+  // Shuffle cool team names and select/cycle them
+  const shuffledNames = [...COOL_TEAM_NAMES].sort(() => Math.random() - 0.5);
+
   // Create numGroups groups
-  const localGroups = Array.from({ length: numGroups }, (_, i) => ({
-    id: `group-${i + 1}`,
-    name: `Break Group ${i + 1}`,
-    iconKey: ICON_KEYS[i % ICON_KEYS.length], // distribute initial icons
-    members: []
-  }));
+  const localGroups = Array.from({ length: numGroups }, (_, i) => {
+    const name = shuffledNames[i % shuffledNames.length];
+    return {
+      id: `group-${i + 1}`,
+      name: name,
+      iconKey: ICON_KEYS[i % ICON_KEYS.length], // distribute initial icons
+      members: []
+    };
+  });
 
   // Initial distribution: distribute employees randomly but unevenly
   const shuffledEmployees = [...employees].sort(() => Math.random() - 0.5);
@@ -584,7 +615,6 @@ function renderGroupsGrid() {
       <div class="group-card-header">
         <div class="group-title-wrap">
           <span class="group-title">${escapeHTML(g.name)}</span>
-          <span class="group-subtitle">${ICON_LABELS[g.iconKey]} (${g.members.length} members)</span>
         </div>
         <div class="group-theme-icon" title="Click to cycle theme icon">
           ${BREAK_ICONS[g.iconKey]}
@@ -597,7 +627,6 @@ function renderGroupsGrid() {
 
     // Add click event on group-theme-icon to cycle
     const iconBtn = card.querySelector('.group-theme-icon');
-    const subtitleSpan = card.querySelector('.group-subtitle');
     
     iconBtn.addEventListener('click', () => {
       // Find current index
@@ -607,7 +636,6 @@ function renderGroupsGrid() {
       
       // Update DOM directly
       iconBtn.innerHTML = BREAK_ICONS[g.iconKey];
-      subtitleSpan.textContent = `${ICON_LABELS[g.iconKey]} (${g.members.length} members)`;
       saveSettingsToLocalStorage();
     });
 
