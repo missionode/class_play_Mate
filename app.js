@@ -153,6 +153,13 @@ function parseCSV(text) {
 // Convert CSV rows to employee objects
 function processLoadedCSV(rows) {
   if (rows.length < 2) return;
+
+  // Check if data contains HTML/script tags (e.g. user pasted Google Drive preview link instead of raw CSV export link)
+  const sampleText = rows.slice(0, 3).map(r => r.join(' ')).join(' ');
+  if (sampleText.includes('<!DOCTYPE') || sampleText.includes('<html') || sampleText.includes('<script') || sampleText.includes('WIZ_global_data')) {
+    alert("Error: The source link returned an HTML page (like a Google Drive view page) instead of raw CSV. Please follow the instructions to 'Publish to web' as 'Comma-separated values (.csv)'.");
+    return;
+  }
   
   // Try to find headers: Name, Gender, Department
   const header = rows[0].map(h => h.trim().toLowerCase());
