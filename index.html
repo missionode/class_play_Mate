@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cafeteria Icebreaker - Team Mixer</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- html2canvas for exporting high-quality images of groups -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYcabwYr564IIb189ECHPqI3D+Qae1Glb9gE7vfbqR4EAFA9d92sMJXCshO2793in78zwwgbf4pxhqWjA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+
+  <!-- Loading Indicator Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <!-- Coffee/Tea Cup Logo Icon -->
+      <svg viewBox="0 0 24 24">
+        <path d="M2,21H20V19H2V21M20,8H18V5H20V8M20,3H4v10A4,4 0 0,0 8,17H14A4,4 0 0,0 18,13v-1h2A2,2 0 0,0 22,10V5A2,2 0 0,0 20,3M16,13A2,2 0 0,1 14,15H8A2,2 0 0,1 6,13V5H16V13Z" />
+      </svg>
+      <h1>Cafeteria Mixer</h1>
+    </div>
+    <div class="header-actions">
+      <!-- Quick toggle for Light/Dark (Cozy warm vs Roasted dark) -->
+      <button class="btn-icon" id="theme-toggle" title="Toggle Theme">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Left Sidebar: Controls & Configuration -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h2>1. Load Employee Data</h2>
+        <div class="input-group">
+          <label for="sheet-url">Google Sheet CSV Link</label>
+          <div class="input-row">
+            <input type="text" id="sheet-url" placeholder="Paste published CSV link here..." />
+            <button class="btn btn-primary" id="load-sheet-btn">Load</button>
+          </div>
+        </div>
+        
+        <div class="input-row">
+          <button class="btn btn-secondary btn-sm" id="load-sample-btn">Load Sample Data</button>
+          <button class="btn btn-secondary btn-sm" id="clear-data-btn">Clear All</button>
+        </div>
+
+        <div class="help-card">
+          <p><strong>💡 How to link Google Sheets:</strong></p>
+          <p>File &gt; Share &gt; Publish to web. Change the dropdown format to "Comma-separated values (.csv)", click publish, and paste the generated link here.</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>2. Mixer Settings</h2>
+        
+        <div class="input-group">
+          <label for="min-group-size">Minimum Members per Group</label>
+          <input type="number" id="min-group-size" value="2" min="1" max="10" />
+        </div>
+
+        <div class="input-group">
+          <label for="max-group-size">Maximum Members per Group</label>
+          <input type="number" id="max-group-size" value="6" min="2" max="20" />
+        </div>
+
+        <button class="btn btn-primary" id="generate-btn" style="padding: 1rem;">
+          <!-- Shuffle icon -->
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M14.83,13.41L13.42,14.82L16.59,18H15A3,3 0 0,1 12,15v-1.18l-5.73-5.73C5.78,8.04 5.2,8 4.61,8H2V10H4.61C4.78,10 4.96,10.03 5.12,10.09L9.41,14.38C8.58,15.82 7.03,16.8 5.24,16.97L5.05,17H2v2H5.05C7.45,18.77 9.17,16.92 10.05,15.05L10.79,13.62L13.41,16.24C12.42,17.91 10.74,19.1 8.78,19.46L8.55,19.5V21.5C11.53,21.05 13.91,19.19 15.07,16.59L17.41,18.93C16.84,19.5 16,20 15,20H13v2H15a4.92,4.92 0 0,0 3.24-1.19L21.05,23.64L22.46,22.23L14.83,13.41M19,6h1.59l-4.17,4.17L17.83,11.59L22,7.41V9h2V5h-4v2h1.59L19.41,9.17L18,7.76L19,6M10.59,9.17L5.76,4.34C6.59,2.9 8.14,1.92 9.93,1.75L10.12,1.72H21v2h-10.9C9.93,3.72 9.75,3.75 9.59,3.81L13.88,8.1L12.47,9.5L10.59,9.17Z" />
+          </svg>
+          Mix Employees
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>3. Canvas Customization</h2>
+        <div class="bg-uploader-wrap">
+          <label class="file-input-label" for="bg-file-input">
+            <!-- Upload Icon -->
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z" />
+            </svg>
+            Upload Custom Background
+          </label>
+          <input type="file" id="bg-file-input" accept="image/*" />
+          <button class="btn btn-secondary btn-sm" id="clear-bg-btn" style="display: none;">Remove Background</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Side: Content Tabs (Directory vs. Generated Board) -->
+    <main class="main-content">
+      <nav class="tabs">
+        <div class="tab active" id="tab-board">Break Presentation</div>
+        <div class="tab" id="tab-directory">Employee Directory (<span id="emp-count">0</span>)</div>
+      </nav>
+
+      <!-- VIEW A: Presentation Board -->
+      <section id="section-board" class="panel-card">
+        <div class="board-header">
+          <div>
+            <span class="stat-pill" id="group-stat-pill">0 Groups Generated</span>
+          </div>
+          <button class="btn btn-primary" id="export-image-btn">
+            <!-- Image Export Icon -->
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+            </svg>
+            Export Presentation Image
+          </button>
+        </div>
+
+        <div class="presentation-canvas-outer">
+          <!-- The container containing everything we render into an image -->
+          <div class="presentation-canvas" id="presentation-canvas">
+            <div class="canvas-bg-overlay"></div>
+            <div class="canvas-content" id="groups-grid">
+              <!-- Dynamically populated group cards will go here -->
+              <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+                <p style="font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 600;">No Groups Mixed Yet</p>
+                <p>Load some employees in the sidebar and click <strong>"Mix Employees"</strong> to create break groupings!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW B: Employee Directory -->
+      <section id="section-directory" class="panel-card" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3>Manage Office Employees</h3>
+          <button class="btn btn-secondary btn-sm" id="add-employee-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+            </svg>
+            Add Employee
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table id="employee-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Department</th>
+                <th style="width: 80px; text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="employee-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
