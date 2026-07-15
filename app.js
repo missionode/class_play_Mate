@@ -39,6 +39,19 @@ const COOL_TEAM_NAMES = [
   "High Key Hydrated 💦"
 ];
 
+const GATHERING_POINTS = [
+  "Cafeteria Area A ☕",
+  "Main Pantry (1st Floor) 🏢",
+  "Terrace Garden Lounge 🌿",
+  "Coffee Bar (Ground Floor) ☕",
+  "North Wing Coffee Station ☕",
+  "South Lounge Area 🛋️",
+  "Skyline Cafeteria ☁️",
+  "Corner Booth Diner 🍽️",
+  "Juice Bar Oasis 🍹",
+  "Central Atrium Courtyard 🌳"
+];
+
 // Application State
 let employees = [];
 let groups = [];
@@ -400,6 +413,43 @@ function createNewEmployeeRow() {
   }, 50);
 }
 
+// Generate meeting time slots and gather points
+function generateTimeSlots(numGroups) {
+  if (numGroups <= 0) return [];
+  if (numGroups === 1) {
+    return ["4:00 PM"];
+  }
+  
+  const startHour = 16; // 4:00 PM
+  const startMin = 0;
+  const totalMinutes = 90; // 4:00 PM to 5:30 PM
+  
+  // Determine slot interval in minutes
+  let rawInterval = totalMinutes / (numGroups - 1);
+  
+  // Round rawInterval to nearest 5 minutes, minimum 5
+  let interval = Math.max(5, Math.round(rawInterval / 5) * 5);
+  
+  const slots = [];
+  for (let i = 0; i < numGroups; i++) {
+    let totalMins = i * interval;
+    if (totalMins > totalMinutes) {
+      totalMins = totalMinutes;
+    }
+    const currentTotalMin = startMin + totalMins;
+    const hour = startHour + Math.floor(currentTotalMin / 60);
+    const min = currentTotalMin % 60;
+    
+    // Format to 12-hour AM/PM format
+    const hour12 = hour > 12 ? hour - 12 : hour;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedMin = min < 10 ? '0' + min : min;
+    
+    slots.push(`${hour12}:${formattedMin} ${ampm}`);
+  }
+  return slots;
+}
+
 // Group Optimizer and Solver Engine
 function mixAndGenerateTeams() {
   if (employees.length === 0) {
@@ -450,6 +500,11 @@ function mixAndGenerateTeams() {
   // Shuffle cool team names and select/cycle them
   const shuffledNames = [...COOL_TEAM_NAMES].sort(() => Math.random() - 0.5);
 
+  // Generate meeting time slots and gather points
+  const times = generateTimeSlots(numGroups);
+  const shuffledTimes = [...times].sort(() => Math.random() - 0.5);
+  const shuffledPoints = [...GATHERING_POINTS].sort(() => Math.random() - 0.5);
+
   // Create numGroups groups
   const localGroups = Array.from({ length: numGroups }, (_, i) => {
     const name = shuffledNames[i % shuffledNames.length];
@@ -457,7 +512,9 @@ function mixAndGenerateTeams() {
       id: `group-${i + 1}`,
       name: name,
       iconKey: ICON_KEYS[i % ICON_KEYS.length], // distribute initial icons
-      members: []
+      members: [],
+      gatheringPoint: shuffledPoints[i % shuffledPoints.length],
+      timeSlot: shuffledTimes[i]
     };
   });
 
@@ -672,10 +729,53 @@ function renderGroupsGrid() {
           ${BREAK_ICONS[g.iconKey]}
         </div>
       </div>
+      
+      <!-- Group Meeting Details -->
+      <div class="group-meeting-info">
+        <div class="meeting-detail">
+          <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
+          </svg>
+          <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="timeSlot">${escapeHTML(g.timeSlot || '4:00 PM')}</span>
+        </div>
+        <div class="meeting-detail">
+          <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z" />
+          </svg>
+          <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="gatheringPoint">${escapeHTML(g.gatheringPoint || 'Cafeteria Area A ☕')}</span>
+        </div>
+      </div>
+
       <div class="group-members">
         ${membersHtml}
       </div>
     `;
+
+    // Listen for meeting details inline edits
+    const timeEdit = card.querySelector('[data-field="timeSlot"]');
+    const locationEdit = card.querySelector('[data-field="gatheringPoint"]');
+
+    const updateGroupValue = (field, cell) => {
+      const val = cell.textContent.trim();
+      const targetGroup = groups.find(grp => grp.id === g.id);
+      if (targetGroup) {
+        targetGroup[field] = val;
+        saveSettingsToLocalStorage();
+      }
+    };
+
+    const preventLineBreak = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.target.blur();
+      }
+    };
+
+    timeEdit.addEventListener('blur', () => updateGroupValue('timeSlot', timeEdit));
+    timeEdit.addEventListener('keydown', preventLineBreak);
+
+    locationEdit.addEventListener('blur', () => updateGroupValue('gatheringPoint', locationEdit));
+    locationEdit.addEventListener('keydown', preventLineBreak);
 
     // Attach dragstart and dragend listeners to row elements
     const rows = card.querySelectorAll('.member-row');
