@@ -652,3 +652,24 @@ tr:hover td {
 .help-card p:last-child {
   margin-bottom: 0;
 }
+
+/* Drag and Drop styles */
+.member-row[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+.member-row[draggable="true"]:active {
+  cursor: grabbing;
+}
+.member-row.dragging {
+  opacity: 0.45;
+  background-color: var(--accent-light);
+  border: 1px dashed var(--accent) !important;
+}
+.group-card.drag-hover {
+  border-color: var(--accent) !important;
+  background-color: var(--accent-light) !important;
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}

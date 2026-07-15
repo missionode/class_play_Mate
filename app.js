@@ -596,13 +596,51 @@ function renderGroupsGrid() {
     card.classList.add('group-card');
     card.dataset.id = g.id;
 
+    // Drop Target listeners on group card
+    card.addEventListener('dragover', (e) => {
+      const draggedSourceGroupId = localStorage.getItem('dragged_source_group_id');
+      
+      // Allow drop only if target has less than 5 members AND we are not dropping in the same group
+      if (g.members.length < 5 && draggedSourceGroupId !== g.id) {
+        e.preventDefault(); // Allows drop
+        card.classList.add('drag-hover');
+      }
+    });
+
+    card.addEventListener('dragleave', () => {
+      card.classList.remove('drag-hover');
+    });
+
+    card.addEventListener('drop', (e) => {
+      card.classList.remove('drag-hover');
+      
+      const empId = e.dataTransfer.getData('text/plain') || localStorage.getItem('dragged_emp_id');
+      const sourceGroupId = localStorage.getItem('dragged_source_group_id');
+      
+      if (!empId || !sourceGroupId || sourceGroupId === g.id) return;
+      if (g.members.length >= 5) return; // Drop constraint: max 5 members
+
+      const sourceGroup = groups.find(grp => grp.id === sourceGroupId);
+      if (!sourceGroup) return;
+
+      const empIndex = sourceGroup.members.findIndex(m => m.id === empId);
+      if (empIndex === -1) return;
+
+      const [member] = sourceGroup.members.splice(empIndex, 1);
+      g.members.push(member);
+
+      // Re-render and persist
+      renderGroupsGrid();
+      saveSettingsToLocalStorage();
+    });
+
     const membersHtml = g.members.map(m => {
       let genderClass = 'gender-other';
       if (m.gender === 'Male') genderClass = 'gender-male';
       if (m.gender === 'Female') genderClass = 'gender-female';
 
       return `
-        <div class="member-row">
+        <div class="member-row" draggable="true" data-emp-id="${m.id}" data-group-id="${g.id}">
           <div class="member-info">
             <span class="member-gender-dot ${genderClass}"></span>
             <span class="member-name">${escapeHTML(m.name)}</span>
@@ -624,6 +662,27 @@ function renderGroupsGrid() {
         ${membersHtml}
       </div>
     `;
+
+    // Attach dragstart and dragend listeners to row elements
+    const rows = card.querySelectorAll('.member-row');
+    rows.forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        const empId = row.dataset.empId;
+        const groupId = row.dataset.groupId;
+        e.dataTransfer.setData('text/plain', empId);
+        
+        localStorage.setItem('dragged_emp_id', empId);
+        localStorage.setItem('dragged_source_group_id', groupId);
+        
+        row.classList.add('dragging');
+      });
+
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        localStorage.removeItem('dragged_emp_id');
+        localStorage.removeItem('dragged_source_group_id');
+      });
+    });
 
     // Add click event on group-theme-icon to cycle
     const iconBtn = card.querySelector('.group-theme-icon');
