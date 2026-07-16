@@ -299,7 +299,12 @@ async function loadFromGoogleSheet() {
 
   showLoader(true);
   try {
-    const response = await fetch(url);
+    // Append timestamp to bypass browser and CDN cache
+    const cacheBusterUrl = url.includes('?') 
+      ? `${url}&t=${Date.now()}` 
+      : `${url}?t=${Date.now()}`;
+
+    const response = await fetch(cacheBusterUrl);
     if (!response.ok) throw new Error("Network error loading sheet. Make sure the URL is correct and published publicly.");
     const data = await response.text();
     const parsed = parseCSV(data);
