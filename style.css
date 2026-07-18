@@ -517,22 +517,36 @@ tr:hover td {
   gap: 0.5rem;
 }
 
-.member-gender-dot {
-  width: 8px;
-  height: 8px;
+.member-avatar {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2.5px solid transparent;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--bg-sidebar); /* placeholder bg while loading */
 }
 
-.gender-male {
-  background-color: #3498db;
+.member-row:hover .member-avatar {
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
-.gender-female {
-  background-color: #e84393;
+.avatar-male {
+  border-color: #3498db;
+  box-shadow: 0 0 0 1px rgba(52, 152, 219, 0.3);
 }
 
-.gender-other {
-  background-color: #9b59b6;
+.avatar-female {
+  border-color: #e84393;
+  box-shadow: 0 0 0 1px rgba(232, 67, 147, 0.3);
+}
+
+.avatar-other {
+  border-color: #9b59b6;
+  box-shadow: 0 0 0 1px rgba(155, 89, 182, 0.3);
 }
 
 .member-name {

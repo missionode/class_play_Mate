@@ -354,6 +354,44 @@ function generateUUID() {
   return 'emp-' + Math.random().toString(36).substr(2, 9);
 }
 
+// Returns a deterministic inline-SVG data URI — generic person silhouette.
+// Completely offline, no external API, no cultural features.
+// Background shade varies per name so each card looks visually distinct.
+function getAvatarUrl(name, gender) {
+  // Stable hash from name for background shade selection
+  let hash = 0;
+  const str = (name || 'user').toLowerCase();
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const shade = Math.abs(hash) % 5;
+
+  // Soft pastel background palettes per gender
+  const palettes = {
+    Male:   { bgs: ['#DBEAFE','#BFDBFE','#BAE6FD','#E0E7FF','#CFFAFE'], figure: '#3B82F6' },
+    Female: { bgs: ['#FCE7F3','#FBCFE8','#FEE2E2','#FED7AA','#FDE68A'], figure: '#EC4899' },
+    Other:  { bgs: ['#EDE9FE','#DDD6FE','#F3E8FF','#FDF4FF','#E0F2FE'], figure: '#8B5CF6' }
+  };
+
+  const p = palettes[gender] || palettes.Other;
+  const bg = p.bgs[shade];
+  const fg = p.figure;
+
+  // Female → dress/skirt silhouette  |  Male/Other → rounded-shoulder silhouette
+  const body = gender === 'Female'
+    ? `<path d='M24 37 L19 55 L45 55 L40 37 Q32 44 24 37Z' fill='${fg}'/>`
+    : `<path d='M14 56 C14 43 22 37 32 37 C42 37 50 43 50 56' fill='${fg}'/>`;
+
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>`
+    + `<circle cx='32' cy='32' r='32' fill='${bg}'/>`
+    + `<circle cx='32' cy='21' r='11' fill='${fg}'/>`
+    + body
+    + `</svg>`;
+
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
 // Update Employee Count in header
 function updateEmployeeCountBadge() {
   empCountSpan.textContent = employees.length;
@@ -739,14 +777,20 @@ function renderGroupsGrid() {
     });
 
     const membersHtml = g.members.map(m => {
-      let genderClass = 'gender-other';
-      if (m.gender === 'Male') genderClass = 'gender-male';
-      if (m.gender === 'Female') genderClass = 'gender-female';
+      let avatarClass = 'avatar-other';
+      if (m.gender === 'Male') avatarClass = 'avatar-male';
+      if (m.gender === 'Female') avatarClass = 'avatar-female';
+
+      const avatarUrl = getAvatarUrl(m.name, m.gender);
 
       return `
         <div class="member-row" draggable="true" data-emp-id="${m.id}" data-group-id="${g.id}">
           <div class="member-info">
-            <span class="member-gender-dot ${genderClass}"></span>
+            <img
+              class="member-avatar ${avatarClass}"
+              src="${avatarUrl}"
+              alt="${escapeHTML(m.name)}"
+            />
             <span class="member-name">${escapeHTML(m.name)}</span>
           </div>
         </div>
