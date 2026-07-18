@@ -58,6 +58,7 @@ const BREAK_GAMES = [
   { name: "Rapid Fire",             emoji: "⚡", desc: "Answer instantly — no thinking, no pausing!" },
   { name: "Office Trivia",          emoji: "🏢", desc: "How well do you actually know your colleagues?" },
   { name: "Guess the Song",         emoji: "🎵", desc: "Hum a tune, everyone else guesses the song." },
+  { name: "Hum Along",              emoji: "🎶", desc: "Pick a song and hum or sing along together!" },
   { name: "Hot Takes",              emoji: "🔥", desc: "Share your spiciest, most controversial opinion." },
   { name: "Alias",                  emoji: "🗣️",  desc: "Explain the word without saying it or any variation." },
   { name: "This or That",           emoji: "🔄", desc: "Quick-fire preferences — coffee or tea? Zoom or meet?" },
@@ -814,12 +815,20 @@ function renderGroupsGrid() {
           <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" />
           </svg>
+          <span class="meeting-label">Meeting Time:</span>
           <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="timeSlot">${escapeHTML(g.timeSlot || '4:00 PM')}</span>
+        </div>
+        <div class="meeting-detail">
+          <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M6,2H18V8L14,12L18,16V22H6V16L10,12L6,8V2M16,7.5V4H8V7.5L12,11.5L16,7.5M12,12.5L8,16.5V20H16V16.5L12,12.5Z" />
+          </svg>
+          <span class="meeting-label">Duration: BT Hours</span>
         </div>
         <div class="meeting-detail">
           <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z" />
           </svg>
+          <span class="meeting-label">Destination:</span>
           <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="gatheringPoint">${escapeHTML(g.gatheringPoint || 'Cafeteria Area A ☕')}</span>
         </div>
       </div>
