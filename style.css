@@ -549,6 +549,111 @@ tr:hover td {
   box-shadow: 0 0 0 1px rgba(155, 89, 182, 0.3);
 }
 
+/* ── Break Game Badge ─────────────────────────────────────── */
+.group-game-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg-sidebar) 100%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  transition: var(--transition);
+}
+
+.group-game-badge:hover {
+  border-left-color: var(--accent-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-badge-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.game-emoji-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.group-game-badge:hover .game-emoji-icon {
+  transform: rotate(10deg) scale(1.15);
+}
+
+.game-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.game-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.game-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-family: var(--font-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.btn-reroll {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, background 0.2s ease;
+  padding: 0;
+}
+
+.btn-reroll:hover {
+  background: var(--accent-light);
+  transform: rotate(120deg) scale(1.15);
+}
+
+/* Spin-out animation when rolling a new game */
+@keyframes badge-exit {
+  0%   { opacity: 1; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(0.85) rotate(-6deg); }
+}
+
+.group-game-badge.rerolling {
+  animation: badge-exit 0.28s ease forwards;
+}
+
+/* ───────────────────────────────────────────────────────────── */
 .member-name {
   font-weight: 500;
 }

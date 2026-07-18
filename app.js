@@ -46,6 +46,32 @@ let GATHERING_POINTS = [
   "Tea leaf 🍃"
 ];
 
+// Break-time games — randomly assigned to each group
+const BREAK_GAMES = [
+  { name: "Dumb Charades",          emoji: "🎭", desc: "Act it out silently — no words allowed!" },
+  { name: "Two Truths & a Lie",     emoji: "🤥", desc: "Say 3 things about yourself, one is fake." },
+  { name: "20 Questions",           emoji: "🤔", desc: "Guess what someone's thinking in 20 yes/no Qs." },
+  { name: "Word Association",       emoji: "💬", desc: "Fire back the first word that pops into your head." },
+  { name: "Would You Rather",       emoji: "⚖️",  desc: "Pick the lesser evil — defend your choice!" },
+  { name: "Emoji Pictionary",       emoji: "😎", desc: "Describe a movie/show using only emojis." },
+  { name: "Story Building",         emoji: "📖", desc: "Each person adds exactly one sentence to the story." },
+  { name: "Rapid Fire",             emoji: "⚡", desc: "Answer instantly — no thinking, no pausing!" },
+  { name: "Office Trivia",          emoji: "🏢", desc: "How well do you actually know your colleagues?" },
+  { name: "Guess the Song",         emoji: "🎵", desc: "Hum a tune, everyone else guesses the song." },
+  { name: "Hot Takes",              emoji: "🔥", desc: "Share your spiciest, most controversial opinion." },
+  { name: "Alias",                  emoji: "🗣️",  desc: "Explain the word without saying it or any variation." },
+  { name: "This or That",           emoji: "🔄", desc: "Quick-fire preferences — coffee or tea? Zoom or meet?" },
+  { name: "Name Place Animal Thing",emoji: "🗺️",  desc: "Classic NPAT race — first to shout wins the round." },
+  { name: "Tongue Twisters",        emoji: "👅", desc: "Fastest clean recitation wins bragging rights." },
+  { name: "Pictionary",             emoji: "✏️",  desc: "Sketch it on paper or a whiteboard and let them guess." },
+  { name: "Movie in 3 Emojis",      emoji: "🎬", desc: "Pick a film, describe it in exactly 3 emojis." },
+  { name: "Never Have I Ever",      emoji: "🙈", desc: "Work-friendly edition — fingers down if you have!" },
+  { name: "GIF Battle",             emoji: "📱", desc: "React to a prompt using only a GIF — best one wins." },
+  { name: "Speed Debate",           emoji: "🥊", desc: "30 seconds to argue both sides of a ridiculous topic." },
+  { name: "Celebrity Heads",        emoji: "👑", desc: "Guess who's on your forehead using yes/no questions." },
+  { name: "Finish the Lyric",       emoji: "🎤", desc: "Someone starts, you finish the song line." }
+];
+
 // Application State
 let employees = [];
 let groups = [];
@@ -354,42 +380,12 @@ function generateUUID() {
   return 'emp-' + Math.random().toString(36).substr(2, 9);
 }
 
-// Returns a deterministic inline-SVG data URI — generic person silhouette.
-// Completely offline, no external API, no cultural features.
-// Background shade varies per name so each card looks visually distinct.
+// Returns a DiceBear pixel-art avatar URL.
+// Gender prefix in seed nudges the generator toward different character looks.
 function getAvatarUrl(name, gender) {
-  // Stable hash from name for background shade selection
-  let hash = 0;
-  const str = (name || 'user').toLowerCase();
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  const shade = Math.abs(hash) % 5;
-
-  // Soft pastel background palettes per gender
-  const palettes = {
-    Male:   { bgs: ['#DBEAFE','#BFDBFE','#BAE6FD','#E0E7FF','#CFFAFE'], figure: '#3B82F6' },
-    Female: { bgs: ['#FCE7F3','#FBCFE8','#FEE2E2','#FED7AA','#FDE68A'], figure: '#EC4899' },
-    Other:  { bgs: ['#EDE9FE','#DDD6FE','#F3E8FF','#FDF4FF','#E0F2FE'], figure: '#8B5CF6' }
-  };
-
-  const p = palettes[gender] || palettes.Other;
-  const bg = p.bgs[shade];
-  const fg = p.figure;
-
-  // Female → dress/skirt silhouette  |  Male/Other → rounded-shoulder silhouette
-  const body = gender === 'Female'
-    ? `<path d='M24 37 L19 55 L45 55 L40 37 Q32 44 24 37Z' fill='${fg}'/>`
-    : `<path d='M14 56 C14 43 22 37 32 37 C42 37 50 43 50 56' fill='${fg}'/>`;
-
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>`
-    + `<circle cx='32' cy='32' r='32' fill='${bg}'/>`
-    + `<circle cx='32' cy='21' r='11' fill='${fg}'/>`
-    + body
-    + `</svg>`;
-
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  const genderPrefix = gender === 'Female' ? 'f' : gender === 'Male' ? 'm' : 'x';
+  const seed = encodeURIComponent(genderPrefix + '_' + (name || 'user').trim());
+  return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&radius=50&scale=90`;
 }
 
 // Update Employee Count in header
@@ -576,6 +572,9 @@ function mixAndGenerateTeams() {
   const shuffledTimes = [...times].sort(() => Math.random() - 0.5);
   const shuffledPoints = [...GATHERING_POINTS].sort(() => Math.random() - 0.5);
 
+  // Shuffle break games and distribute — ensure no two adjacent groups share a game
+  const shuffledGames = [...BREAK_GAMES].sort(() => Math.random() - 0.5);
+
   // Create numGroups groups
   const localGroups = Array.from({ length: numGroups }, (_, i) => {
     const name = shuffledNames[i % shuffledNames.length];
@@ -585,7 +584,8 @@ function mixAndGenerateTeams() {
       iconKey: ICON_KEYS[i % ICON_KEYS.length], // distribute initial icons
       members: [],
       gatheringPoint: shuffledPoints[i % shuffledPoints.length],
-      timeSlot: shuffledTimes[i]
+      timeSlot: shuffledTimes[i],
+      breakGame: shuffledGames[i % shuffledGames.length] // unique game per group
     };
   });
 
@@ -823,10 +823,48 @@ function renderGroupsGrid() {
         </div>
       </div>
 
+      <!-- Break Game Badge -->
+      <div class="group-game-badge" data-group-id="${g.id}">
+        <div class="game-badge-left">
+          <span class="game-emoji-icon">${g.breakGame ? g.breakGame.emoji : '🎲'}</span>
+          <div class="game-text-wrap">
+            <span class="game-label">Break Game</span>
+            <span class="game-name">${g.breakGame ? escapeHTML(g.breakGame.name) : 'Random Game'}</span>
+            <span class="game-desc">${g.breakGame ? escapeHTML(g.breakGame.desc) : ''}</span>
+          </div>
+        </div>
+        <button class="btn-reroll" title="Roll a different game">🎲</button>
+      </div>
+
       <div class="group-members">
         ${membersHtml}
       </div>
     `;
+
+    // Re-roll button: assign a new random game to this group
+    const rerollBtn = card.querySelector('.btn-reroll');
+    if (rerollBtn) {
+      rerollBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetGroup = groups.find(grp => grp.id === g.id);
+        if (!targetGroup) return;
+        // Pick a different game than the current one
+        let newGame;
+        do {
+          newGame = BREAK_GAMES[Math.floor(Math.random() * BREAK_GAMES.length)];
+        } while (BREAK_GAMES.length > 1 && newGame.name === (targetGroup.breakGame || {}).name);
+        targetGroup.breakGame = newGame;
+        // Animate the badge before re-rendering
+        const badge = card.querySelector('.group-game-badge');
+        if (badge) {
+          badge.classList.add('rerolling');
+          setTimeout(() => { renderGroupsGrid(); saveSettingsToLocalStorage(); }, 300);
+        } else {
+          renderGroupsGrid();
+          saveSettingsToLocalStorage();
+        }
+      });
+    }
 
     // Listen for meeting details inline edits
     const timeEdit = card.querySelector('[data-field="timeSlot"]');
