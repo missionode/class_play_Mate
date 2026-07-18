@@ -790,6 +790,7 @@ function renderGroupsGrid() {
               class="member-avatar ${avatarClass}"
               src="${avatarUrl}"
               alt="${escapeHTML(m.name)}"
+              onerror="this.onerror=null;this.src='https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(m.name)}&radius=50'"
             />
             <span class="member-name">${escapeHTML(m.name)}</span>
           </div>
