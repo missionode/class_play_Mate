@@ -970,8 +970,52 @@ function removeBackgroundImage() {
   localStorage.removeItem('mixer_bg');
 }
 
+// Convert remote avatars to embedded data URLs so html2canvas can always render them.
+async function embedExportAvatars(canvasElement) {
+  const avatars = Array.from(canvasElement.querySelectorAll('.member-avatar'));
+
+  await Promise.all(avatars.map(async avatar => {
+    avatar.dataset.exportSrc = avatar.src;
+
+    try {
+      const response = await fetch(avatar.src, { mode: 'cors' });
+      if (!response.ok) throw new Error(`Avatar request failed: ${response.status}`);
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      avatar.src = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const avatarCanvas = document.createElement('canvas');
+          avatarCanvas.width = 128;
+          avatarCanvas.height = 128;
+          const context = avatarCanvas.getContext('2d');
+          context.drawImage(image, 0, 0, avatarCanvas.width, avatarCanvas.height);
+          URL.revokeObjectURL(objectUrl);
+          resolve(avatarCanvas.toDataURL('image/png'));
+        };
+        image.onerror = error => {
+          URL.revokeObjectURL(objectUrl);
+          reject(error);
+        };
+        image.src = objectUrl;
+      });
+
+      if (avatar.decode) await avatar.decode();
+    } catch (error) {
+      console.warn('Could not embed avatar for export:', error);
+    }
+  }));
+
+  return () => avatars.forEach(avatar => {
+    if (avatar.dataset.exportSrc) avatar.src = avatar.dataset.exportSrc;
+    delete avatar.dataset.exportSrc;
+  });
+}
+
 // Export presentation view to image format
-function exportToImage() {
+async function exportToImage() {
   if (groups.length === 0) {
     alert("Nothing to export. Mix employees first.");
     return;
@@ -984,6 +1028,7 @@ function exportToImage() {
   
   // We want to export only the group grids inside the presentation canvas
   const canvasElement = document.getElementById('presentation-canvas');
+  const restoreAvatars = await embedExportAvatars(canvasElement);
 
   // Small delay to ensure render tree reflects the 'exporting' class state change
   setTimeout(() => {
@@ -1000,11 +1045,13 @@ function exportToImage() {
       link.click();
       
       // Clean up
+      restoreAvatars();
       document.body.classList.remove('exporting');
       showLoader(false);
     }).catch(err => {
       console.error("html2canvas export error:", err);
       alert("Failed to export image. Try again.");
+      restoreAvatars();
       document.body.classList.remove('exporting');
       showLoader(false);
     });
