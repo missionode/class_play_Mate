@@ -984,6 +984,9 @@ function renderGroupsGrid() {
               onerror="this.onerror=null;this.src='https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(m.name)}&radius=50'"
             />
             <span class="member-name">${escapeHTML(m.name)}</span>
+            ${m.isGuide ? `
+              <span class="member-guide-badge" title="Verified guide" aria-label="Verified guide">🧭</span>
+            ` : ''}
           </div>
         </div>
       `;
@@ -1265,6 +1268,10 @@ async function exportToImage() {
   let restoreAvatars = () => {};
 
   try {
+    if (typeof html2canvas !== 'function') {
+      throw new Error('Image export library did not load');
+    }
+
     restoreAvatars = await embedExportAvatars(canvasElement);
     if (document.fonts?.ready) await document.fonts.ready;
 
@@ -1302,7 +1309,9 @@ async function exportToImage() {
     const link = document.createElement('a');
     link.download = `office-break-groups-${new Date().toISOString().split('T')[0]}-lossless.png`;
     link.href = downloadUrl;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
     setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     announceStatus('Lossless PNG downloaded. Send it as a document to avoid messaging-app compression.', 'success');
   } catch (err) {

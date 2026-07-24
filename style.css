@@ -616,6 +616,23 @@ tr:hover td {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.member-guide-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.78rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .member-avatar {
@@ -1568,6 +1585,10 @@ tr:hover td {
   width: var(--export-width, 1200px);
   max-width: none;
   padding: 2rem;
+}
+
+.exporting #presentation-canvas .canvas-header > p:nth-of-type(3) {
+  border-color: var(--border) !important;
 }
 
 .exporting #presentation-canvas .canvas-content {
