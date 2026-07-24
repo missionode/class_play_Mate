@@ -1,21 +1,21 @@
-Name,Gender,Department,Grouping Point
-Aditi Sharma,Female,Engineering,Suda Suda
-Rahul Verma,Male,Engineering,Ponnus Cafe
-Priya Patel,Female,Marketing,Rasoi
-Amit Singh,Male,Marketing,Tea leaf
-Sneha Reddy,Female,Product,
-Rohan Das,Male,Product,
-Neha Gupta,Female,HR,
-Vikram Malhotra,Male,HR,
-Ananya Iyer,Female,Sales,
-Karan Mehta,Male,Sales,
-Tanvi Rao,Female,Engineering,
-Rajesh Nair,Male,Marketing,
-Shreya Sen,Female,Product,
-Sanjay Joshi,Male,Sales,
-Meera Krishnan,Female,HR,
-Arjun Kapoor,Male,Engineering,
-Divya Teja,Female,Marketing,
-Vijay Kumar,Male,Product,
-Poojitha Rao,Female,Sales,
-Nikhil Saxena,Male,HR,
+Name,Gender,Department,Destination,Planning Event,Is Guide
+Aditi Sharma,Female,Engineering,Cafe meetup,No,Yes
+Rahul Verma,Male,Engineering,Bowling,Yes,
+Priya Patel,Female,Marketing,Club evening,Yes,Yes
+Amit Singh,Male,Marketing,Movie day,Yes,
+Sneha Reddy,Female,Product,Day trip,Yes,
+Rohan Das,Male,Product,Dinner,Yes,
+Neha Gupta,Female,HR,,,Yes
+Vikram Malhotra,Male,HR,,,
+Ananya Iyer,Female,Sales,,,
+Karan Mehta,Male,Sales,,,
+Tanvi Rao,Female,Engineering,,,
+Rajesh Nair,Male,Marketing,,,Yes
+Shreya Sen,Female,Product,,,Yes
+Sanjay Joshi,Male,Sales,,,
+Meera Krishnan,Female,HR,,,
+Arjun Kapoor,Male,Engineering,,,
+Divya Teja,Female,Marketing,,,
+Vijay Kumar,Male,Product,,,
+Poojitha Rao,Female,Sales,,,
+Nikhil Saxena,Male,HR,,,

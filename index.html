@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cafeteria Icebreaker - Team Mixer</title>
+  <title>Breakcup | Workplace Group Mixer</title>
   <link rel="stylesheet" href="style.css">
   <!-- html2canvas for exporting high-quality images of groups -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -11,7 +11,7 @@
 <body>
 
   <!-- Loading Indicator Overlay -->
-  <div class="loading-overlay" id="loading-overlay">
+  <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite" aria-label="Working">
     <div class="spinner"></div>
   </div>
 
@@ -25,7 +25,7 @@
     </div>
     <div class="header-actions">
       <!-- Quick toggle for Light/Dark (Cozy warm vs Roasted dark) -->
-      <button class="btn-icon" id="theme-toggle" title="Toggle Theme">
+      <button class="btn-icon" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle light and dark theme">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z" />
         </svg>
@@ -97,13 +97,15 @@
 
     <!-- Right Side: Content Tabs (Directory vs. Generated Board) -->
     <main class="main-content">
-      <nav class="tabs">
-        <div class="tab active" id="tab-board">Break Presentation</div>
-        <div class="tab" id="tab-directory">Employee Directory (<span id="emp-count">0</span>)</div>
+      <div id="app-status" class="app-status" role="status" aria-live="polite"></div>
+
+      <nav class="tabs" role="tablist" aria-label="Application views">
+        <button class="tab active" id="tab-board" role="tab" aria-selected="true" aria-controls="section-board">Break Presentation</button>
+        <button class="tab" id="tab-directory" role="tab" aria-selected="false" aria-controls="section-directory">Employee Directory (<span id="emp-count">0</span>)</button>
       </nav>
 
       <!-- VIEW A: Presentation Board -->
-      <section id="section-board" class="panel-card">
+      <section id="section-board" class="panel-card" role="tabpanel" aria-labelledby="tab-board">
         <div class="board-header">
           <div>
             <span class="stat-pill" id="group-stat-pill">0 Groups Generated</span>
@@ -123,9 +125,9 @@
             
             <div class="canvas-header" style="position: relative; z-index: 2; margin-bottom: 2rem; text-align: center;">
               <h2 class="brand-title">Br<span class="light-trans">e</span>ak<span class="slant-cup-wrap"><svg class="slant-cup" viewBox="0 0 24 24"><path d="M2,21H20V19H2V21M20,8H18V5H20V8M20,3H4v10A4,4 0 0,0 8,17H14A4,4 0 0,0 18,13v-1h2A2,2 0 0,0 22,10V5A2,2 0 0,0 20,3M16,13A2,2 0 0,1 14,15H8A2,2 0 0,1 6,13V5H16V13Z" /></svg><span class="spill-drop">💧</span></span>cup</h2>
-              <p style="font-size: 1rem; color: var(--text-muted); font-style: italic; font-weight: 500; margin-bottom: 0.5rem;">Stirring conversations, lucky cups at times.</p>
-              <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.4; opacity: 0.9;">Finding break buddies can be hard—we make it easy. We match you into random, cross-team beverage groups so you can blend in and connect effortlessly.</p>
-              <p style="font-size: 0.78rem; color: var(--text-main); max-width: 680px; margin: 0.85rem auto 0; padding: 0.65rem 1rem; line-height: 1.4; background: rgba(232, 126, 51, 0.12); border: 1px solid rgba(232, 126, 51, 0.35); border-radius: 8px;"><strong>⏰ Please aim to reach the listed gathering point by the stated time, either individually or with your group.</strong> Participation is completely optional—there is no obligation.</p>
+              <p style="font-size: 1rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem;">Connect across teams, one break at a time.</p>
+              <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.4; opacity: 0.9;">Cross-functional groups designed to make workplace conversations and new connections easier.</p>
+              <p style="font-size: 0.78rem; color: var(--text-main); max-width: 680px; margin: 0.85rem auto 0; padding: 0.65rem 1rem; line-height: 1.4; background: rgba(232, 126, 51, 0.12); border: 1px solid rgba(232, 126, 51, 0.35); border-radius: 8px;"><strong>🧭 Meet your verified guide at the listed break time.</strong> If no guide is assigned, meet directly at the destination. For planning events, use the break to plan the activity together.</p>
             </div>
 
             <div class="canvas-content" id="groups-grid">
@@ -153,7 +155,7 @@
       </section>
 
       <!-- VIEW B: Employee Directory -->
-      <section id="section-directory" class="panel-card" style="display: none;">
+      <section id="section-directory" class="panel-card" role="tabpanel" aria-labelledby="tab-directory" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
           <h3>Manage Office Employees</h3>
           <button class="btn btn-secondary btn-sm" id="add-employee-btn">
@@ -171,7 +173,8 @@
                 <th>Name</th>
                 <th>Gender</th>
                 <th>Department</th>
-                <th style="width: 80px; text-align: center;">Actions</th>
+                <th class="guide-column">Verified Guide</th>
+                <th class="action-column">Action</th>
               </tr>
             </thead>
             <tbody id="employee-table-body">

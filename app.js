@@ -46,6 +46,30 @@ let GATHERING_POINTS = [
   "Tea leaf 🍃"
 ];
 
+let EVENT_SLOTS = [];
+
+const SAMPLE_CSV_FALLBACK = `Name,Gender,Department,Destination,Planning Event,Is Guide
+Aditi Sharma,Female,Engineering,Cafe meetup,No,Yes
+Rahul Verma,Male,Engineering,Bowling,Yes,
+Priya Patel,Female,Marketing,Club evening,Yes,Yes
+Amit Singh,Male,Marketing,Movie day,Yes,
+Sneha Reddy,Female,Product,Day trip,Yes,
+Rohan Das,Male,Product,Dinner,Yes,
+Neha Gupta,Female,HR,,,Yes
+Vikram Malhotra,Male,HR,,,
+Ananya Iyer,Female,Sales,,,
+Karan Mehta,Male,Sales,,,
+Tanvi Rao,Female,Engineering,,,
+Rajesh Nair,Male,Marketing,,,Yes
+Shreya Sen,Female,Product,,,Yes
+Sanjay Joshi,Male,Sales,,,
+Meera Krishnan,Female,HR,,,
+Arjun Kapoor,Male,Engineering,,,
+Divya Teja,Female,Marketing,,,
+Vijay Kumar,Male,Product,,,
+Poojitha Rao,Female,Sales,,,
+Nikhil Saxena,Male,HR,,,`;
+
 // Break-time games — randomly assigned to each group
 const BREAK_GAMES = [
   { name: "Dumb Charades",          emoji: "🎭", desc: "Act it out silently — no words allowed!" },
@@ -117,6 +141,7 @@ const empCountSpan = document.getElementById('emp-count');
 const addEmployeeBtn = document.getElementById('add-employee-btn');
 const employeeTableBody = document.getElementById('employee-table-body');
 const loadingOverlay = document.getElementById('loading-overlay');
+const appStatus = document.getElementById('app-status');
 
 // Initialize App
 window.addEventListener('DOMContentLoaded', () => {
@@ -177,12 +202,24 @@ function switchTab(target) {
     tabDirectory.classList.remove('active');
     sectionBoard.style.display = 'block';
     sectionDirectory.style.display = 'none';
+    tabBoard.setAttribute('aria-selected', 'true');
+    tabDirectory.setAttribute('aria-selected', 'false');
   } else {
     tabBoard.classList.remove('active');
     tabDirectory.classList.add('active');
     sectionBoard.style.display = 'none';
     sectionDirectory.style.display = 'block';
+    tabBoard.setAttribute('aria-selected', 'false');
+    tabDirectory.setAttribute('aria-selected', 'true');
   }
+}
+
+function announceStatus(message, type = 'info') {
+  appStatus.textContent = message;
+  appStatus.dataset.type = type;
+  appStatus.classList.add('show');
+  clearTimeout(announceStatus.timeoutId);
+  announceStatus.timeoutId = setTimeout(() => appStatus.classList.remove('show'), 5000);
 }
 
 // CSV Parser Helper
@@ -236,6 +273,17 @@ function processLoadedCSV(rows) {
   const nameIdx = header.findIndex(h => h.includes('name'));
   const genderIdx = header.findIndex(h => h.includes('gender') || h.includes('sex'));
   const deptIdx = header.findIndex(h => h.includes('department') || h.includes('team') || h.includes('dept'));
+  const guideIdx = header.findIndex(h =>
+    h.includes('guide') ||
+    h.includes('coordinator') ||
+    h.includes('facilitator') ||
+    h.includes('host')
+  );
+  const planningIdx = header.findIndex(h =>
+    h.includes('planning event') ||
+    h === 'planning' ||
+    h.includes('plan event')
+  );
   const spotIdx = header.findIndex(h => 
     h.includes('gathering') || 
     h.includes('meeting') || 
@@ -260,6 +308,7 @@ function processLoadedCSV(rows) {
   };
 
   const parsedSpots = new Set();
+  const parsedSlots = new Map();
   const newEmployees = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -268,7 +317,14 @@ function processLoadedCSV(rows) {
     // Extract gathering spot if present in sheet row (even if name/gender/dept are blank)
     if (spotIdx !== -1 && row[spotIdx]) {
       const spot = row[spotIdx].trim();
-      if (spot) parsedSpots.add(spot);
+      if (spot) {
+        parsedSpots.add(spot);
+        const planningValue = planningIdx !== -1
+          ? (row[planningIdx] || '').trim().toLowerCase()
+          : '';
+        const planning = ['yes', 'y', 'true', '1', 'plan', 'planning'].includes(planningValue);
+        parsedSlots.set(spot.toLowerCase(), { destination: spot, planning });
+      }
     }
 
     if (!row[mapIdx.name]) continue;
@@ -282,17 +338,21 @@ function processLoadedCSV(rows) {
     else gender = 'Other';
 
     const dept = (row[mapIdx.dept] || 'General').trim();
+    const guideValue = guideIdx !== -1 ? (row[guideIdx] || '').trim().toLowerCase() : '';
+    const isGuide = ['yes', 'y', 'true', '1', 'guide', 'verified'].includes(guideValue);
 
     newEmployees.push({
       id: generateUUID(),
       name,
       gender,
-      department: dept
+      department: dept,
+      isGuide
     });
   }
 
   if (parsedSpots.size > 0) {
     GATHERING_POINTS = Array.from(parsedSpots);
+    EVENT_SLOTS = Array.from(parsedSlots.values());
   }
 
   if (newEmployees.length > 0) {
@@ -300,9 +360,9 @@ function processLoadedCSV(rows) {
     renderEmployeeTable();
     updateEmployeeCountBadge();
     
-    const spotInfo = parsedSpots.size > 0 
-      ? `<br><span style="font-size: 0.9rem; color: var(--accent); font-weight: 600;">📍 Loaded ${parsedSpots.size} meeting spots: ${Array.from(parsedSpots).join(', ')}</span>`
-      : `<br><span style="font-size: 0.85rem; color: var(--text-muted);">No custom meeting spots found in sheet. Using defaults.</span>`;
+    const spotInfo = parsedSpots.size > 0
+      ? `<br><span style="font-size: 0.9rem; color: var(--accent); font-weight: 600;">🗓️ Loaded ${parsedSlots.size} destination options.</span>`
+      : `<br><span style="font-size: 0.85rem; color: var(--text-muted);">No destination schedule found. Using defaults.</span>`;
 
     groupsGrid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
@@ -313,6 +373,7 @@ function processLoadedCSV(rows) {
     `;
     groupStatPill.textContent = "0 Groups Generated";
     saveSettingsToLocalStorage();
+    announceStatus(`Loaded ${employees.length} employees and ${parsedSlots.size} destination options.`, 'success');
   }
 }
 
@@ -338,7 +399,7 @@ async function loadFromGoogleSheet() {
     processLoadedCSV(parsed);
   } catch (error) {
     console.error(error);
-    alert("Failed to load Google Sheet. Ensure it is published as CSV and accessible.");
+    announceStatus('Could not load the Sheet. Check that it is published as CSV.', 'error');
   } finally {
     showLoader(false);
   }
@@ -348,13 +409,25 @@ async function loadFromGoogleSheet() {
 async function loadSampleData() {
   showLoader(true);
   try {
-    const response = await fetch('./employees_sample.csv?t=' + Date.now());
-    if (!response.ok) throw new Error("Could not load local sample data.");
-    const text = await response.text();
+    let text = SAMPLE_CSV_FALLBACK;
+
+    // Browsers block local fetches when index.html is opened via file://.
+    // Use the CSV file when served over HTTP and the built-in copy otherwise.
+    if (window.location.protocol !== 'file:') {
+      try {
+        const response = await fetch('./employees_sample.csv?t=' + Date.now());
+        if (!response.ok) throw new Error(`Sample request failed: ${response.status}`);
+        text = await response.text();
+      } catch (error) {
+        console.warn('Using built-in sample data:', error);
+      }
+    }
+
     const parsed = parseCSV(text);
     processLoadedCSV(parsed);
   } catch (error) {
     console.error(error);
+    announceStatus('Failed to load sample data.', 'error');
   } finally {
     showLoader(false);
   }
@@ -362,6 +435,9 @@ async function loadSampleData() {
 
 // Clear employee lists
 function clearAllEmployees() {
+  if (employees.length && !confirm(`Clear all ${employees.length} employees and generated groups?`)) {
+    return;
+  }
   employees = [];
   groups = [];
   renderEmployeeTable();
@@ -374,6 +450,7 @@ function clearAllEmployees() {
   `;
   groupStatPill.textContent = "0 Groups Generated";
   saveSettingsToLocalStorage();
+  announceStatus('Employee and group data cleared.', 'success');
 }
 
 // UUID helper
@@ -396,6 +473,16 @@ function updateEmployeeCountBadge() {
 
 // Render the Editable Employee Grid
 function renderEmployeeTable() {
+  const table = employeeTableBody.closest('table');
+  table.querySelector('thead').innerHTML = `
+    <tr>
+      <th>Name</th>
+      <th>Gender</th>
+      <th>Department</th>
+      <th class="guide-column">Verified Guide</th>
+      <th class="action-column">Action</th>
+    </tr>
+  `;
   employeeTableBody.innerHTML = '';
   employees.forEach(emp => {
     const tr = document.createElement('tr');
@@ -411,7 +498,13 @@ function renderEmployeeTable() {
         </select>
       </td>
       <td><div class="editable-cell" contenteditable="true" data-field="department">${escapeHTML(emp.department)}</div></td>
-      <td style="text-align: center;">
+      <td class="guide-column">
+        <select class="guide-status-select" style="padding: 0.25rem 0.5rem; font-size: 0.9rem;">
+          <option value="false" ${!emp.isGuide ? 'selected' : ''}>No</option>
+          <option value="true" ${emp.isGuide ? 'selected' : ''}>Yes</option>
+        </select>
+      </td>
+      <td class="action-column">
         <button class="btn btn-danger btn-sm delete-row-btn" title="Delete employee">Delete</button>
       </td>
     `;
@@ -420,6 +513,7 @@ function renderEmployeeTable() {
     const nameCell = tr.querySelector('[data-field="name"]');
     const deptCell = tr.querySelector('[data-field="department"]');
     const genderSelect = tr.querySelector('.gender-select');
+    const guideStatusSelect = tr.querySelector('.guide-status-select');
     const deleteBtn = tr.querySelector('.delete-row-btn');
 
     const updateValue = (field, cell) => {
@@ -440,12 +534,30 @@ function renderEmployeeTable() {
         saveSettingsToLocalStorage();
       }
     });
+    guideStatusSelect.addEventListener('change', () => {
+      const isGuide = guideStatusSelect.value === 'true';
+      const targetEmp = employees.find(e => e.id === emp.id);
+      if (!targetEmp) return;
+
+      targetEmp.isGuide = isGuide;
+      groups.forEach(group => {
+        const member = group.members.find(person => person.id === emp.id);
+        if (member) member.isGuide = isGuide;
+        if (!isGuide && group.guideId === emp.id) {
+          group.guideId = group.members.find(person => person.isGuide)?.id || '';
+        }
+      });
+      if (groups.length) renderGroupsGrid();
+      saveSettingsToLocalStorage();
+    });
 
     deleteBtn.addEventListener('click', () => {
+      if (!confirm(`Delete ${emp.name}?`)) return;
       employees = employees.filter(e => e.id !== emp.id);
       tr.remove();
       updateEmployeeCountBadge();
       saveSettingsToLocalStorage();
+      announceStatus(`${emp.name} deleted.`, 'success');
     });
 
     employeeTableBody.appendChild(tr);
@@ -458,7 +570,8 @@ function createNewEmployeeRow() {
     id: generateUUID(),
     name: 'New Employee',
     gender: 'Female',
-    department: 'Engineering'
+    department: 'Engineering',
+    isGuide: false
   };
   employees.push(newEmp);
   renderEmployeeTable();
@@ -481,7 +594,7 @@ function createNewEmployeeRow() {
   }, 50);
 }
 
-// Generate meeting time slots and gather points
+// Generate meeting time slots
 function generateTimeSlots(numGroups) {
   if (numGroups <= 0) return [];
   if (numGroups === 1) {
@@ -568,10 +681,12 @@ function mixAndGenerateTeams() {
   // Shuffle cool team names and select/cycle them
   const shuffledNames = [...COOL_TEAM_NAMES].sort(() => Math.random() - 0.5);
 
-  // Generate meeting time slots and gather points
+  // Break times stay flexible; the sheet only supplies destinations/planning topics.
   const times = generateTimeSlots(numGroups);
   const shuffledTimes = [...times].sort(() => Math.random() - 0.5);
   const shuffledPoints = [...GATHERING_POINTS].sort(() => Math.random() - 0.5);
+  const shuffledEventSlots = [...EVENT_SLOTS].sort(() => Math.random() - 0.5);
+  const physicalEventSlots = shuffledEventSlots.filter(slot => !slot.planning);
 
   // Shuffle break games and distribute — ensure no two adjacent groups share a game
   const shuffledGames = [...BREAK_GAMES].sort(() => Math.random() - 0.5);
@@ -579,12 +694,18 @@ function mixAndGenerateTeams() {
   // Create numGroups groups
   const localGroups = Array.from({ length: numGroups }, (_, i) => {
     const name = shuffledNames[i % shuffledNames.length];
+    const eventSlot = physicalEventSlots.length
+      ? physicalEventSlots[i % physicalEventSlots.length]
+      : null;
     return {
       id: `group-${i + 1}`,
       name: name,
       iconKey: ICON_KEYS[i % ICON_KEYS.length], // distribute initial icons
       members: [],
-      gatheringPoint: shuffledPoints[i % shuffledPoints.length],
+      gatheringPoint: eventSlot?.destination || (
+        shuffledEventSlots.length ? 'Office cafeteria' : shuffledPoints[i % shuffledPoints.length]
+      ),
+      planningEvent: false,
       timeSlot: shuffledTimes[i],
       breakGame: shuffledGames[i % shuffledGames.length] // unique game per group
     };
@@ -711,10 +832,45 @@ function mixAndGenerateTeams() {
     }
   }
 
+  // Spread verified guides so every group has one accountable coordinator.
+  localGroups.filter(group => !group.members.some(member => member.isGuide)).forEach(targetGroup => {
+    const donorGroup = localGroups.find(group =>
+      group.members.filter(member => member.isGuide).length > 1
+    );
+    if (!donorGroup) return;
+
+    const guideIndex = donorGroup.members.findIndex(member => member.isGuide);
+    const memberIndex = targetGroup.members.findIndex(member => !member.isGuide);
+    const guide = donorGroup.members[guideIndex];
+    donorGroup.members[guideIndex] = targetGroup.members[memberIndex];
+    targetGroup.members[memberIndex] = guide;
+  });
+
+  // Each group has one member responsible for gathering the team.
+  localGroups.forEach(group => {
+    group.guideId = group.members.find(member => member.isGuide)?.id || '';
+  });
+
+  // Randomly give some guided groups a planning topic. A guide never
+  // guarantees a planning event, and unguided groups never receive one.
+  const planningOptions = shuffledEventSlots.filter(slot => slot.planning);
+  const guidedGroups = localGroups
+    .filter(group => group.guideId)
+    .sort(() => Math.random() - 0.5);
+
+  guidedGroups.forEach(group => {
+    if (!planningOptions.length || Math.random() >= 0.35) return;
+    const planningSlot = planningOptions.pop();
+    group.gatheringPoint = planningSlot.destination;
+    group.planningEvent = true;
+  });
+
   groups = localGroups;
   renderGroupsGrid();
   updateFunnyExcuse();
   saveSettingsToLocalStorage();
+  const guidedCount = groups.filter(group => group.guideId).length;
+  announceStatus(`Created ${groups.length} groups; ${guidedCount} have verified guides.`, 'success');
 }
 
 // Render generated Groups Grid on the visual board
@@ -735,6 +891,28 @@ function renderGroupsGrid() {
   groupStatPill.textContent = `${groups.length} Groups Generated`;
 
   groups.forEach(g => {
+    // Saved groups may predate guide support, so refresh member eligibility
+    // from the current Employee Directory before selecting the card guide.
+    g.members.forEach(member => {
+      const directoryEmployee = employees.find(employee => employee.id === member.id);
+      if (directoryEmployee) member.isGuide = Boolean(directoryEmployee.isGuide);
+    });
+
+    const eligibleGuides = g.members.filter(member => member.isGuide);
+    if (!eligibleGuides.some(member => member.id === g.guideId)) {
+      g.guideId = eligibleGuides[0]?.id || '';
+    }
+    if (!g.guideId && g.planningEvent) {
+      const physicalDestination = EVENT_SLOTS.find(slot => !slot.planning);
+      g.gatheringPoint = physicalDestination?.destination || 'Office cafeteria';
+      g.planningEvent = false;
+    }
+    const selectedGuide = eligibleGuides.find(member => member.id === g.guideId);
+    const guideNames = eligibleGuides.map(member => member.name);
+    const guideNamesText = guideNames.length > 1
+      ? `${guideNames.slice(0, -1).join(', ')} and ${guideNames[guideNames.length - 1]}`
+      : guideNames[0] || '';
+
     const card = document.createElement('div');
     card.classList.add('group-card');
     card.dataset.id = g.id;
@@ -743,8 +921,8 @@ function renderGroupsGrid() {
     card.addEventListener('dragover', (e) => {
       const draggedSourceGroupId = localStorage.getItem('dragged_source_group_id');
       
-      // Allow drop only if target has less than 5 members AND we are not dropping in the same group
-      if (g.members.length < 5 && draggedSourceGroupId !== g.id) {
+      const configuredMax = parseInt(maxGroupSizeInput.value, 10) || 6;
+      if (g.members.length < configuredMax && draggedSourceGroupId !== g.id) {
         e.preventDefault(); // Allows drop
         card.classList.add('drag-hover');
       }
@@ -761,7 +939,8 @@ function renderGroupsGrid() {
       const sourceGroupId = localStorage.getItem('dragged_source_group_id');
       
       if (!empId || !sourceGroupId || sourceGroupId === g.id) return;
-      if (g.members.length >= 5) return; // Drop constraint: max 5 members
+      const configuredMax = parseInt(maxGroupSizeInput.value, 10) || 6;
+      if (g.members.length >= configuredMax) return;
 
       const sourceGroup = groups.find(grp => grp.id === sourceGroupId);
       if (!sourceGroup) return;
@@ -769,8 +948,19 @@ function renderGroupsGrid() {
       const empIndex = sourceGroup.members.findIndex(m => m.id === empId);
       if (empIndex === -1) return;
 
+      const movingMember = sourceGroup.members[empIndex];
+      const sourceGuideCount = sourceGroup.members.filter(member => member.isGuide).length;
+      if (movingMember.isGuide && sourceGuideCount === 1) {
+        alert('Assign or move another verified guide into this group first.');
+        return;
+      }
+
       const [member] = sourceGroup.members.splice(empIndex, 1);
       g.members.push(member);
+      if (sourceGroup.guideId === member.id) {
+        sourceGroup.guideId = sourceGroup.members.find(person => person.isGuide)?.id || '';
+      }
+      if (!g.guideId && member.isGuide) g.guideId = member.id;
 
       // Re-render and persist
       renderGroupsGrid();
@@ -804,9 +994,29 @@ function renderGroupsGrid() {
         <div class="group-title-wrap">
           <span class="group-title">${escapeHTML(g.name)}</span>
         </div>
-        <div class="group-theme-icon" title="Click to cycle theme icon">
+        <button class="group-theme-icon" type="button" aria-label="Change group theme icon">
           ${BREAK_ICONS[g.iconKey]}
-        </div>
+        </button>
+      </div>
+
+      <div class="group-guide-banner ${selectedGuide ? 'has-guide' : 'location-managed'}">
+        <span class="group-guide-banner-icon">${selectedGuide ? '🧭' : g.planningEvent ? '💡' : '📍'}</span>
+        <span>
+          <span class="group-guide-banner-label">Group gathering instruction</span>
+          ${selectedGuide ? `
+            <span class="group-guide-instruction">
+              Meet <strong>${escapeHTML(guideNamesText)}</strong> to gather your group before the break.
+            </span>
+          ` : g.planningEvent ? `
+            <span class="group-guide-instruction">
+              <strong>No verified guide assigned.</strong> Meet at the listed break time to plan ${escapeHTML(g.gatheringPoint || 'the activity')} together.
+            </span>
+          ` : `
+            <span class="group-guide-instruction">
+              Meet directly at <strong>${escapeHTML(g.gatheringPoint || 'the destination')}</strong> to gather your group.
+            </span>
+          `}
+        </span>
       </div>
       
       <!-- Group Meeting Details -->
@@ -828,9 +1038,15 @@ function renderGroupsGrid() {
           <svg class="meeting-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z" />
           </svg>
-          <span class="meeting-label">Destination:</span>
-          <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="gatheringPoint">${escapeHTML(g.gatheringPoint || 'Cafeteria Area A ☕')}</span>
+          <span class="meeting-label">${g.planningEvent ? 'Planning Topic:' : 'Destination:'}</span>
+          <span class="meeting-text editable-meeting-field" contenteditable="true" data-field="gatheringPoint">${escapeHTML(g.gatheringPoint || 'Plan together')}</span>
         </div>
+        ${g.planningEvent ? `
+          <div class="meeting-detail planning-event-note">
+            <span class="meeting-icon">💡</span>
+            <span><strong>Planning event:</strong> Use this break to plan it together.</span>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Break Game Badge -->
@@ -988,8 +1204,8 @@ async function embedExportAvatars(canvasElement) {
         const image = new Image();
         image.onload = () => {
           const avatarCanvas = document.createElement('canvas');
-          avatarCanvas.width = 128;
-          avatarCanvas.height = 128;
+          avatarCanvas.width = 256;
+          avatarCanvas.height = 256;
           const context = avatarCanvas.getContext('2d');
           context.drawImage(image, 0, 0, avatarCanvas.width, avatarCanvas.height);
           URL.revokeObjectURL(objectUrl);
@@ -1014,6 +1230,21 @@ async function embedExportAvatars(canvasElement) {
   });
 }
 
+function getLosslessExportScale(element) {
+  const targetScale = 4;
+  const maxDimension = 16384;
+  const maxPixels = 64000000;
+  const width = Math.max(element.scrollWidth, element.offsetWidth);
+  const height = Math.max(element.scrollHeight, element.offsetHeight);
+
+  return Math.max(1, Math.min(
+    targetScale,
+    maxDimension / width,
+    maxDimension / height,
+    Math.sqrt(maxPixels / (width * height))
+  ));
+}
+
 // Export presentation view to image format
 async function exportToImage() {
   if (groups.length === 0) {
@@ -1026,36 +1257,64 @@ async function exportToImage() {
   // Apply exporting styles to disable animations, hide buttons and editing icons
   document.body.classList.add('exporting');
   
-  // We want to export only the group grids inside the presentation canvas
   const canvasElement = document.getElementById('presentation-canvas');
-  const restoreAvatars = await embedExportAvatars(canvasElement);
+  const exportColumns = Math.min(groups.length, 3);
+  const exportWidth = exportColumns === 1 ? 720 : exportColumns === 2 ? 960 : 1200;
+  canvasElement.style.setProperty('--export-columns', exportColumns);
+  canvasElement.style.setProperty('--export-width', `${exportWidth}px`);
+  let restoreAvatars = () => {};
 
-  // Small delay to ensure render tree reflects the 'exporting' class state change
-  setTimeout(() => {
-    html2canvas(canvasElement, {
-      scale: 2, // High resolution export
-      backgroundColor: null, // support transparent background if set
+  try {
+    restoreAvatars = await embedExportAvatars(canvasElement);
+    if (document.fonts?.ready) await document.fonts.ready;
+
+    // Wait for the export-only styles and embedded images to finish rendering.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const exportScale = getLosslessExportScale(canvasElement);
+    const exportedCanvas = await html2canvas(canvasElement, {
+      scale: exportScale,
+      width: canvasElement.scrollWidth,
+      height: canvasElement.scrollHeight,
+      windowWidth: exportWidth,
+      backgroundColor: null,
       logging: false,
-      useCORS: true
-    }).then(exportedCanvas => {
-      // Create download link
-      const link = document.createElement('a');
-      link.download = `office-break-groups-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = exportedCanvas.toDataURL('image/png');
-      link.click();
-      
-      // Clean up
-      restoreAvatars();
-      document.body.classList.remove('exporting');
-      showLoader(false);
-    }).catch(err => {
-      console.error("html2canvas export error:", err);
-      alert("Failed to export image. Try again.");
-      restoreAvatars();
-      document.body.classList.remove('exporting');
-      showLoader(false);
+      useCORS: true,
+      imageTimeout: 15000,
+      onclone: clonedDocument => {
+        clonedDocument.querySelectorAll('.guide-select').forEach(select => {
+          select.style.display = 'none';
+        });
+        clonedDocument.querySelectorAll('.export-guide-name').forEach(name => {
+          name.style.display = 'inline';
+        });
+      }
     });
-  }, 200);
+
+    const blob = await new Promise((resolve, reject) => {
+      exportedCanvas.toBlob(
+        result => result ? resolve(result) : reject(new Error('PNG encoding failed')),
+        'image/png'
+      );
+    });
+
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `office-break-groups-${new Date().toISOString().split('T')[0]}-lossless.png`;
+    link.href = downloadUrl;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    announceStatus('Lossless PNG downloaded. Send it as a document to avoid messaging-app compression.', 'success');
+  } catch (err) {
+    console.error("html2canvas export error:", err);
+    announceStatus('Image export failed. Please try again.', 'error');
+  } finally {
+    restoreAvatars();
+    canvasElement.style.removeProperty('--export-columns');
+    canvasElement.style.removeProperty('--export-width');
+    document.body.classList.remove('exporting');
+    showLoader(false);
+  }
 }
 
 // Loading UI triggers
@@ -1091,6 +1350,7 @@ function saveSettingsToLocalStorage() {
     localStorage.setItem('mixer_employees', JSON.stringify(employees));
     localStorage.setItem('mixer_groups', JSON.stringify(groups));
     localStorage.setItem('mixer_gathering_points', JSON.stringify(GATHERING_POINTS));
+    localStorage.setItem('mixer_event_slots', JSON.stringify(EVENT_SLOTS));
   } catch (e) {
     console.error("Failed to save state to localStorage:", e);
   }
@@ -1129,6 +1389,11 @@ function loadSettingsFromLocalStorage() {
     const savedPoints = localStorage.getItem('mixer_gathering_points');
     if (savedPoints) {
       GATHERING_POINTS = JSON.parse(savedPoints);
+    }
+
+    const savedEventSlots = localStorage.getItem('mixer_event_slots');
+    if (savedEventSlots) {
+      EVENT_SLOTS = JSON.parse(savedEventSlots);
     }
 
     const savedBg = localStorage.getItem('mixer_bg');
