@@ -1305,15 +1305,29 @@ async function exportToImage() {
       );
     });
 
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `office-break-groups-${new Date().toISOString().split('T')[0]}-lossless.png`;
-    link.href = downloadUrl;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-    announceStatus('Lossless PNG downloaded. Send it as a document to avoid messaging-app compression.', 'success');
+    const fileName = `office-break-groups-${new Date().toISOString().split('T')[0]}.png`;
+    const imageFile = new File([blob], fileName, { type: 'image/png' });
+
+    if (navigator.share && navigator.canShare?.({ files: [imageFile] })) {
+      try {
+        await navigator.share({
+          title: 'Breakcup Groups',
+          text: 'Here is the break-group presentation.',
+          files: [imageFile]
+        });
+        announceStatus('Presentation image shared.', 'success');
+      } catch (shareError) {
+        if (shareError.name === 'AbortError') {
+          announceStatus('Sharing cancelled.', 'info');
+          return;
+        }
+        downloadImageBlob(blob, fileName);
+        announceStatus('Sharing is unavailable, so the PNG was downloaded instead.', 'success');
+      }
+    } else {
+      downloadImageBlob(blob, fileName);
+      announceStatus('Sharing is unavailable in this browser, so the PNG was downloaded.', 'success');
+    }
   } catch (err) {
     console.error("html2canvas export error:", err);
     announceStatus('Image export failed. Please try again.', 'error');
@@ -1324,6 +1338,17 @@ async function exportToImage() {
     document.body.classList.remove('exporting');
     showLoader(false);
   }
+}
+
+function downloadImageBlob(blob, fileName) {
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = downloadUrl;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
 // Loading UI triggers
